@@ -1,4 +1,4 @@
-module ldap
+module github.com/xonoko/ldap
 
 go 1.15
 
