@@ -24,7 +24,7 @@ type Connection struct {
 }
 
 type Config struct {
-	Url string
+	Urls []string
 
 	Insecure bool
 	CustomCA string
@@ -77,12 +77,19 @@ func NewClient(config Config) (*Client, error) {
 }
 
 func (c *Client) Connect() (*Connection, error) {
-	conn, err := c.dialLDAP(c.config.Url)
-	if err != nil {
-		return nil, err
+	var err error
+	for _, url := range c.config.Urls {
+		conn, err := c.dialLDAP(url)
+		if err != nil {
+			continue
+		}
+		return &Connection{conn: conn, client: c}, nil
 	}
+	return nil, errors.Wrapf(err, "Could not connect to any of the ldap servers")
+}
 
-	return &Connection{conn: conn, client: c}, nil
+func (conn *Connection) Close() {
+	conn.conn.Close()
 }
 
 func (conn *Connection) CheckAuth(username, password string) error{
