@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/go-ldap/ldap/v3"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"math"
 	"sync"
@@ -77,15 +78,16 @@ func NewClient(config Config) (*Client, error) {
 }
 
 func (c *Client) Connect() (*Connection, error) {
-	var err error
+	var multiErr error
 	for _, url := range c.config.Urls {
 		conn, err := c.dialLDAP(url)
 		if err != nil {
+			multiErr =  multierror.Append(multiErr, err)
 			continue
 		}
 		return &Connection{conn: conn, client: c}, nil
 	}
-	return nil, errors.Wrapf(err, "Could not connect to any of the ldap servers")
+	return nil, multiErr
 }
 
 func (conn *Connection) Close() {
